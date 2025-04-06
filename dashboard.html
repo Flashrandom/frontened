@@ -1,62 +1,182 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stack Overflow Trends</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-        .chart-container {
-            width: 80%;
-            margin: 0 auto;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Stack Overflow Trends</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: row;
+    }
+
+    aside {
+      width: 250px;
+      background-color: rgba(255, 255, 255, 0.05);
+      padding: 20px;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    aside h2 {
+      font-size: 1.2rem;
+      margin-bottom: 10px;
+      color: #ffd54f;
+    }
+
+    aside ul {
+      list-style: none;
+    }
+
+    aside ul li {
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    main {
+      flex: 1;
+      padding: 30px;
+      position: relative;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2rem;
+      margin-bottom: 10px;
+      color: #ffffff;
+    }
+
+    .top-tag-animated {
+      font-size: 1.8rem;
+      text-align: center;
+      font-weight: bold;
+      color: #ffeb3b;
+      animation: pulse 1.5s infinite ease-in-out;
+      margin-bottom: 20px;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.1); opacity: 0.8; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .chart-container {
+      width: 100%;
+      max-width: 1100px;
+      height: 600px;
+      margin: 0 auto;
+    }
+  </style>
 </head>
 <body>
-    <h1>Stack Overflow Tag Trends</h1>
-    <div class="chart-container">
-        <canvas id="trendChart"></canvas>
-    </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            fetch('/api/data')
-                .then(response => response.json())
-                .then(data => {
-                    const ctx = document.getElementById('trendChart').getContext('2d');
-                    new Chart(ctx, {
-                        type: 'line',
-                        data: data,
-                        options: {
-                            responsive: true,
-                            plugins: {
-                                title: {
-                                    display: true,
-                                    text: 'Tag Popularity Over Time (%)'
-                                },
-                                tooltip: {
-                                    mode: 'index',
-                                    intersect: false
-                                }
-                            },
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    title: {
-                                        display: true,
-                                        text: 'Percentage of Questions'
-                                    }
-                                }
-                            }
-                        }
-                    });
-                })
-                .catch(error => console.error('Error loading data:', error));
-        });
-    </script>
+  <!-- Sidebar for top 10 tags -->
+  <aside>
+    <h2>🔥 Top 10 Tags</h2>
+    <ul id="tagList">
+      <!-- Tags will be populated dynamically -->
+    </ul>
+  </aside>
+
+  <!-- Main content -->
+  <main>
+    <h1>🌐 Stack Overflow: The Evolution of Tech Tags</h1>
+    <!-- Animated top tag just below the heading -->
+    <div id="topTagBanner" class="top-tag-animated" style="display: none;"></div>
+
+    <div class="chart-container">
+      <canvas id="trendChart"></canvas>
+    </div>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      fetch('/api/data')
+        .then(response => response.json())
+        .then(data => {
+          const ctx = document.getElementById('trendChart').getContext('2d');
+
+          // Extract tag labels
+          const topTags = data.datasets.map(d => d.label);
+
+          // Show animated top tag banner
+          const topTagBanner = document.getElementById("topTagBanner");
+          const topTagName = topTags[0] || "python";
+          topTagBanner.textContent = `🔥 Trending Now: ${topTagName.toUpperCase()} 🐍`;
+          topTagBanner.style.display = "block";
+
+          // Create Chart
+          new Chart(ctx, {
+            type: 'line',
+            data: data,
+            options: {
+              responsive: true,
+              plugins: {
+                title: {
+                  display: true,
+                  text: 'Tag Popularity Over Time (%)',
+                  color: '#fff',
+                  font: { size: 16 }
+                },
+                legend: {
+                  labels: { color: "#fff" }
+                },
+                tooltip: {
+                  mode: 'index',
+                  intersect: false
+                }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  title: {
+                    display: true,
+                    text: 'Percentage of Questions',
+                    color: "#fff"
+                  },
+                  ticks: { color: "#fff" },
+                  grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                },
+                x: {
+                  ticks: { color: "#fff" },
+                  grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                }
+              }
+            }
+          });
+
+          // Populate Top 10 Tags in Sidebar
+          const tagList = document.getElementById("tagList");
+
+          const sortedTags = data.datasets
+            .sort((a, b) => {
+              const totalA = a.data.reduce((sum, val) => sum + val, 0);
+              const totalB = b.data.reduce((sum, val) => sum + val, 0);
+              return totalB - totalA;
+            })
+            .slice(0, 10); // top 10 tags
+
+          sortedTags.forEach(tag => {
+            const li = document.createElement("li");
+            li.textContent = tag.label;
+            tagList.appendChild(li);
+          });
+
+        })
+        .catch(error => console.error('Error loading data:', error));
+    });
+  </script>
 </body>
 </html>
