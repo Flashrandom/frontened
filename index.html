@@ -103,7 +103,7 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
-      fetch('/api/data')
+      fetch('https://dhp-backened.onrender.com/api/data')
         .then(response => response.json())
         .then(data => {
           const ctx = document.getElementById('trendChart').getContext('2d');
